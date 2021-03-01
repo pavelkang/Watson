@@ -23,66 +23,19 @@ class WatsonApp: Hashable {
         hasher.combine(name)
     }
     
+    /// Main entry to get recommendations for a query
+    /// - Parameter query: query string
+    /// - Returns: A sorted list of suggestion based on descending recommendation priority
     func search(query: String) -> [Suggestion] {
         fatalError("Must override")
     }
     
+    
+    /// SF Symbol that will be displayed for its section
     var symbol: String {
-        fatalError("Must overrid")
+        fatalError("Must override")
     }
     
-}
-
-class CheatsheetApp: WatsonApp {
-    var databaseForTest: Set<CheatItem> = Set<CheatItem>()
-    
-    init() {
-        super.init(name: "Cheatsheet")
-        loadForTest()
-    }
-    
-    func loadForTest() {
-        let cheatItemA = CheatItem(content: "Shower him frequently", name: "How to make your puppy prettier")
-        let cheatItemB = CheatItem(content: "https://www.nowinstock.net/ca/videogaming/consoles/sonyps5/", name: "Now In Stock: PS5")
-        let cheatItemC = CheatItem(content: "Mac Mini is very useful", name: "New Mac Mini Is Here")
-        databaseForTest.insert(cheatItemA)
-        databaseForTest.insert(cheatItemB)
-        databaseForTest.insert(cheatItemC)
-    }
-    
-    func captureIntentToCreate(query: String) -> [Suggestion] {
-        let item = CheatItem(content: query)
-        return [
-            Suggestion(id: self.name + "." + item.id, displayText: "Add " + query, payload: CheatItem(content: query), quickActions: [
-                QuickAction.CreateItemAction(
-                    identifier: "", item: item,
-                    action: {
-                        print("Not implemented")
-                    })
-            ])
-        ]
-    }
-    
-    override func search(query: String) -> [Suggestion] {
-        return captureIntentToCreate(query: query)
-        /*
-        let results: Set<CheatItem> = databaseForTest.filter {
-            let corpus: String = ($0.name ?? "") + $0.content
-            return corpus.lowercased().contains(query.lowercased())
-        }
-        return results.map { cheatItem -> Suggestion in
-            let suggestionId = self.name + "." + cheatItem.id
-            return Suggestion(id: suggestionId, displayText: cheatItem.name ?? "", payload: cheatItem, quickActions: [
-                QuickAction.OpenInBrowserAction(identifier: cheatItem.id, url: cheatItem.content),
-                QuickAction.CopyToClipBoardAction(identifier: cheatItem.id, content: cheatItem.content)
-            ])
-        }*/
-
-    }
-    
-    override var symbol: String {
-        "books.vertical"
-    }
 }
 
 class TodoApp: WatsonApp {
@@ -109,19 +62,7 @@ class WatsonBackend {
     
     init() {
         apps.insert(CheatsheetApp())
-        // apps.insert(TodoApp())
-        load()
-    }
-    
-    func load() {
-        /*
-        let suggestionA = Suggestion(id: 0, displayText: "Healthy Dog Food", cheatItem: CheatItem(id: 0, content: "abc", name: "Healthy Dog Food"))
-        let suggestionB = Suggestion(id: 1, displayText: "Border collie guide", cheatItem: CheatItem(id: 1, content: "farmer's dog", name: "Border collie guide"))
-        let suggestionC = Suggestion(id: 2, displayText: "Why are Poodles so cute", cheatItem: CheatItem(id: 2, content: "Poodles are very cute!!!", name: "Why are Poodles so cute"))
-        database.insert(suggestionA)
-        database.insert(suggestionB)
-        database.insert(suggestionC)
-         */
+        
     }
     
     func search(query: String) -> SuggestionResult {

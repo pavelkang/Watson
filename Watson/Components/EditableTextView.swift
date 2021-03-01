@@ -21,10 +21,27 @@ class NSEditableTextView: NSTextView {
 }
 
 
+class ScrollableEditableCoordinator: NSObject, NSTextViewDelegate {
+    var swiftuiView: _ScrollableEditableTextView
+    
+    init(_ textView: _ScrollableEditableTextView) {
+        self.swiftuiView = textView
+    }
+    
+    func textDidChange(_ notification: Notification) {
+        print("HI")
+        if let textField = notification.object as? NSEditableTextView {
+            self.swiftuiView.text = textField.string
+        }
+        
+    }
+    
+}
+
 struct _ScrollableEditableTextView: NSViewRepresentable {
     
     var textStyle: NSFont.TextStyle
-    var text: String
+    @Binding var text: String
     
     var width: CGFloat
     var height: CGFloat
@@ -32,8 +49,10 @@ struct _ScrollableEditableTextView: NSViewRepresentable {
     var isHorizontallyResizable: Bool
     var maximumNumberOfLines: Int
     var placeholder: String
-        
+    
     func makeNSView(context: Context) -> NSScrollView {
+        
+        print("make ns view with", text)
         
         let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: width, height: height))
         scrollView.drawsBackground = false
@@ -49,7 +68,7 @@ struct _ScrollableEditableTextView: NSViewRepresentable {
         textView.isSelectable = true
         textView.isEditable = true
         textView.placeholderAttributedString = NSAttributedString(string: placeholder)
-        textView.string = text
+        // textView.string = text
         textView.maxSize = NSMakeSize(.greatestFiniteMagnitude, .greatestFiniteMagnitude)
         textView.textContainer?.widthTracksTextView = false
         textView.textContainer?.containerSize = NSMakeSize(.greatestFiniteMagnitude, .greatestFiniteMagnitude) // !! Important
@@ -80,26 +99,15 @@ struct _ScrollableEditableTextView: NSViewRepresentable {
     }
     
     func updateNSView(_ nsView: NSScrollView, context: Context) {
+        print("UPDATE NS VIEW", text)
         if let textView = nsView.documentView as? NSEditableTextView {
             textView.string = text
-            textView.font = NSFont.preferredFont(forTextStyle: textStyle)
+            // textView.font = NSFont.preferredFont(forTextStyle: textStyle)
         }
     }
     
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, NSTextViewDelegate {
-        var swiftuiView: _ScrollableEditableTextView
-        
-        init(_ textView: _ScrollableEditableTextView) {
-            self.swiftuiView = textView
-        }
-        
-        func textDidChange(_ notification: Notification) {
-        }
-        
+    func makeCoordinator() -> ScrollableEditableCoordinator {
+        ScrollableEditableCoordinator(self)
     }
     
     
@@ -109,17 +117,28 @@ struct _ScrollableEditableTextView: NSViewRepresentable {
 struct EditableTextView: View {
     
     var placeholder: String = ""
-    var text: String
+    @Binding var text: String
     @State private var hovering: Bool = false
     var width: CGFloat = 350
     var height: CGFloat = 30
     var textStyle: NSFont.TextStyle = .largeTitle
     var isVerticallyResizable: Bool = false
     var isHorizontallyResizable: Bool = true
-    var maximumNumberOfLines: Int = 1
+    var maximumNumberOfLines: Int = 1    
+    
+    /*
+    init(text: Binding<String>) {
+        print("init with", text.wrappedValue)
+        self._text = text
+    }
+    
+    init(text: Binding<String>, width: CGFloat, height: CGFloat, textStyle: NSFont.TextStyle, isVerticallyResizable: Bool, isHorizontallyResizable: Bool, maximumNumberOfLines: Int) {
+        print("Init with", text.wrappedValue)
+        self._text = text
+    }*/
     
     var body: some View {
-        _ScrollableEditableTextView(textStyle: textStyle, text: text, width: width, height: height, isVerticallyResizable: isVerticallyResizable, isHorizontallyResizable: isHorizontallyResizable, maximumNumberOfLines: maximumNumberOfLines, placeholder: placeholder).frame(width: width, height: height)
+        _ScrollableEditableTextView(textStyle: textStyle, text: $text, width: width, height: height, isVerticallyResizable: isVerticallyResizable, isHorizontallyResizable: isHorizontallyResizable, maximumNumberOfLines: maximumNumberOfLines, placeholder: placeholder).frame(width: width, height: height)
             .onHover(perform: { hovering in
                 self.hovering = hovering
             })
@@ -127,8 +146,6 @@ struct EditableTextView: View {
                 RoundedRectangle(cornerRadius: 3.0)
                     .stroke(Color.SlateGray, lineWidth: hovering ? 1.2 : 0)
             )
-            // .border(Color.SlateGray, width: hovering ? 1 : 0, cornerRadius: 5.0)
-            //.border(Color.SlateGray, width: hovering ? 1 : 0)
     }
 }
 
@@ -137,7 +154,7 @@ struct EditableTextArea: View {
     var initialText: String = ""
 
     var body: some View {
-        EditableTextView(text: content, width: 400, height: 200, textStyle: .body, isVerticallyResizable: true, isHorizontallyResizable: true, maximumNumberOfLines: Int(INT_MAX))
+        EditableTextView(text: .constant(content), width: 400, height: 200, textStyle: .body, isVerticallyResizable: true, isHorizontallyResizable: true, maximumNumberOfLines: Int(INT_MAX))
     }
     
 }
@@ -145,7 +162,7 @@ struct EditableTextArea: View {
 struct EditableTextView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            EditableTextView(text: "Add Title Here")
+            EditableTextView(text: .constant("Add Title Here"))
                 .frame(width: 500, height: 500)
         }.background(Color.gray)
     }

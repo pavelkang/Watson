@@ -17,10 +17,18 @@ struct CheatSheetView: View {
     var title: String = ""
     var content: String
     @ObservedObject var viewModel: WatsonViewModel
+    
         
     var body: some View {
         VStack(alignment: .leading) {
-            EditableTextView(placeholder: "Add Title Here", text: title)
+            EditableTextView(
+                placeholder: "Add Title Here",
+                text: Binding<String>(get: {
+                    viewModel.getPayload(at: "title") as! String
+                }, set: {
+                    viewModel.setPayload(at: "title", with: $0)
+                })
+            )
             EditableTextArea(content: content)
         }
     }
@@ -31,14 +39,13 @@ struct CheatSheetControlledView: View {
     @ObservedObject var viewModel: WatsonViewModel
     
     init(cheatItem: CheatItem, viewModel: WatsonViewModel) {
-        print("KKK")
         self.cheatItem = cheatItem
         self.viewModel = viewModel
     }
     
     var body: some View {
         CheatSheetView(
-            title: cheatItem.name ?? "",
+            title: cheatItem.title ?? "",
             content: cheatItem.content,
             viewModel: viewModel
         )

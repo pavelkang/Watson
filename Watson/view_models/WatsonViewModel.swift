@@ -7,8 +7,11 @@
 
 import SwiftUI
 
-enum ViewState {
-    case empty, loading, finished
+enum ViewState : String {
+    case empty = "empty"
+    case loading = "loading"
+    case editing = "editing"
+    case finished = "finished"
 }
 
 
@@ -19,6 +22,7 @@ class WatsonViewModel: ObservableObject {
     @Published private(set) var selectedSuggestion: Suggestion? = nil
     @Published private(set) var selectedQAIndex: Int = 0
     private var backend: WatsonBackend = WatsonBackend()
+    @Published var payloadBeingEdited: PayloadTrait? = nil
     
     init() {
         suggestionResult = SuggestionResult(content: [])
@@ -34,37 +38,53 @@ class WatsonViewModel: ObservableObject {
         return viewState == ViewState.empty
     }
     
-    // MARK: State Changing Functions
+    // User Interactions
+    
+    /// User types in the input bar
+    /// - Parameter to: new search string
     func updateQuery(to: String) -> Void {
         query = to
         if (query.count == 0) {
             resetState()
             return
         }
-        search()
+        // Search for query
+        suggestionResult = backend.search(query: query)
+        print(suggestionResult)
+        if (suggestionResult.isEmpty) {
+            viewState = .empty
+            selectedSuggestion = nil
+        } else {
+            selectedSuggestion = suggestionResult.content[0].suggestions[0]
+            payloadBeingEdited = selectedSuggestion?.payload
+            viewState = .finished
+        }
     }
     
+    // MARK: State changing Functions
     func resetState() -> Void {
         query = ""
         viewState = .empty
         suggestionResult = SuggestionResult(content: [])
         selectedSuggestion = nil
         selectedQAIndex = 0
-    }
-    
-    func search() -> Void {
-        suggestionResult = backend.search(query: query)
-        if (suggestionResult.isEmpty) {
-            viewState = .empty
-            selectedSuggestion = nil
-        } else {
-            selectedSuggestion = suggestionResult.content[0].suggestions[0]
-            viewState = .finished
-        }
-        print(viewState, selectedSuggestion?.displayText)
+        payloadBeingEdited = nil
     }
     
     // MARK: Helper Functions
+    
+    
+    func getPayload(at key: String) -> Any? {
+        print("Get Payload", key, "_")
+        return payloadBeingEdited?.get(key: key)
+        // TOOD: Each
+        // app implements update payload method
+    }
+    
+    func setPayload(at key: String, with value: Any?) -> Void {
+        print("set payload", key, value, "__")
+        payloadBeingEdited?.set(key: key, with: value)
+    }
     
     
     /// Find suggestion's position in current suggerstion result
@@ -142,9 +162,9 @@ class WatsonViewModel: ObservableObject {
     
     func enter() -> Void {
         print("Pressed enter")
-        if let action = self.selectedSuggestion?.quickActions[self.selectedQAIndex] {
-            action.action()
-        }
+        let currentQAs = getCurrentQuickActions()
+        print(currentQAs[self.selectedQAIndex].identifier)
+        currentQAs[self.selectedQAIndex].getAction()()
     }
     
     func tab() -> Void {
@@ -155,17 +175,21 @@ class WatsonViewModel: ObservableObject {
     }
     
     func esc() -> Void {
-        print("Pressed esc")
+        resetState()
     }
     
-    // MARK: Quick Actions
-    func getQuickActions(of suggestion: Suggestion) -> [QuickAction] {
+    func getCurrentQuickActions() -> [QuickAction] {
+        if let suggestion = selectedSuggestion {
+            _ = suggestion.quickActions.map({
+                qa in qa.contextualize(payload: self.payloadBeingEdited)
+            })
+            return suggestion.quickActions
+        }
         return []
     }
     
     // MARK: UI Controls
     func onMouseDownQueryField() -> Void {
-        print("MMMMMMM")
         let alert = NSAlert()
         alert.messageText = "Give Up Editing?"
         alert.informativeText = "Your current item is not saved"

@@ -11,10 +11,6 @@ enum AppType {
     case CheatsheetAppType, TodoAppType
 }
 
-protocol PayloadTrait {
-    var app: AppType { get }
-}
-
 
 struct Suggestion: Identifiable, Hashable {
     static func == (lhs: Suggestion, rhs: Suggestion) -> Bool {
@@ -43,4 +39,5 @@ struct SuggestionResult {
     var isEmpty: Bool {
         return content.count == 0
     }
+    
 }

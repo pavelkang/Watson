@@ -41,7 +41,7 @@ struct SuggestionDetailView: View {
         case AppType.CheatsheetAppType:
             let cheatItem: CheatItem = suggestion.payload as! CheatItem
             return AnyView(
-                DetailViewWrapper(quickActions: viewModel.getQuickActions(of: suggestion), selectedQAIndex: viewModel.selectedQAIndex) {
+                DetailViewWrapper(quickActions: viewModel.getCurrentQuickActions(), selectedQAIndex: viewModel.selectedQAIndex) {
                     CheatSheetControlledView(cheatItem: cheatItem, viewModel: viewModel)}
             )
         default:
@@ -56,6 +56,6 @@ struct SuggestionDetailView: View {
 
 struct SuggestionDetailView_Previews: PreviewProvider {
     static var previews: some View {
-        SuggestionDetailView(viewModel: WatsonViewModel(), suggestion: Suggestion(id: "test", displayText: "Hello", payload: CheatItem(content: "hi", name: "yo")))
+        SuggestionDetailView(viewModel: WatsonViewModel(), suggestion: Suggestion(id: "test", displayText: "Hello", payload: CheatItem(content: "hi", title: "title")))
     }
 }
