@@ -21,34 +21,36 @@ class CheatsheetApp: WatsonApp {
     
     func captureIntentToCreate(query: String) -> Suggestion {
         let item = CheatItem(content: query)
-        return Suggestion(id: self.name + "." + item.id, displayText: "Add " + query, payload: item, quickActions: [
-                QuickAction.CreateItemAction(
-                    identifier: "", item: item,
-                    action: { payload in
-                        print("pl", payload)
-                        // Need to get the payload
-                        guard let appDelegate =
-                          NSApplication.shared.delegate as? AppDelegate else {
-                          return
-                        }
-                        let managedContext =
-                          appDelegate.persistentContainer.viewContext
-                        let entity =
-                          NSEntityDescription.entity(forEntityName: "CheatItemEnt",
-                                                     in: managedContext)!
-                        let cheatItemEnt = NSManagedObject(entity: entity, insertInto: managedContext) as! CheatItemEnt
+        let qas = [
+            QuickAction.CreateItemAction(
+                identifier: "", item: item,
+                action: { payload in
+                    // Need to get the payload
+                    guard let appDelegate =
+                      NSApplication.shared.delegate as? AppDelegate else {
+                      return
+                    }
+                    let managedContext =
+                      appDelegate.persistentContainer.viewContext
+                    let entity =
+                      NSEntityDescription.entity(forEntityName: "CheatItemEnt",
+                                                 in: managedContext)!
+                    let cheatItemEnt = NSManagedObject(entity: entity, insertInto: managedContext) as! CheatItemEnt
 
-                        cheatItemEnt.setValue(payload!.get(key: "content") as! String, forKey: "content")
-                        cheatItemEnt.setValue(payload!.get(key: "title") as! String, forKey: "title")
-                        
+                    cheatItemEnt.setValue(payload!.get(key: "content") as! String, forKey: "content")
+                    cheatItemEnt.setValue(payload!.get(key: "title") as! String, forKey: "title")
+                    
 
-                        do {
-                          try managedContext.save()
-                        } catch let error as NSError {
-                          print("Could not save. \(error), \(error.userInfo)")
-                        }
-                    })
-            ])
+                    do {
+                      try managedContext.save()
+                    } catch let error as NSError {
+                      print("Could not save. \(error), \(error.userInfo)")
+                    }
+                })
+        ]
+        return Suggestion.FromNew(
+            payload: item, qas: qas
+        )
     }
     
     override func search(query: String) -> [Suggestion] {
@@ -91,14 +93,16 @@ class CheatsheetApp: WatsonApp {
         var readIntents: [Suggestion] = fetchedCheatItemEnts.map { cheatItemEnt -> Suggestion in
             
             let cheatItem = CheatItem(fromEnt: cheatItemEnt)
-            let suggestionId = (cheatItemEnt.objectID.uriRepresentation().absoluteString) + (cheatItem.title ?? "") + "." + cheatItem.content // TODO suggestion ID auto
             
             var qas: [QuickAction] = []
             if let _ = NSURL(string: cheatItemEnt.content) {
                 qas.append(QuickAction.OpenInBrowserAction(identifier: cheatItem.id, url: cheatItem.content))
             }
             qas.append(QuickAction.CopyToClipBoardAction(identifier: cheatItem.id, content: cheatItem.content))
-            return Suggestion(id: suggestionId, displayText: cheatItem.title ?? "", payload: cheatItem, quickActions: qas)
+            return Suggestion.FromExisting(
+                payload: cheatItem,
+                qas: qas
+            )
         }
         readIntents.append(createIntents)
         return readIntents

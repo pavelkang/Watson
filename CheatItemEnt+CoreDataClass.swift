@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreData
+import Cocoa
 
 @objc(CheatItemEnt)
 public class CheatItemEnt: NSManagedObject {
@@ -24,15 +25,59 @@ public class CheatItemEnt: NSManagedObject {
 }
 
 struct CheatItem: PayloadTrait, Hashable {
-    mutating func set(key: String, with value: Any?) {
+
+    
+    func set(key: String, with value: Any?) -> PayloadTrait {
+
         switch key {
         case "title":
-            self.title = value as! String
+            let title = value as! String
+            if let ent = self.originalEnt {
+                do {
+                    let appDelegate = NSApplication.shared.delegate as! AppDelegate
+                    let context = appDelegate.persistentContainer.viewContext
+                    
+                    ent.setValue(title, forKey: "title")
+                    try context.save()
+                } catch let error as NSError {
+                    print(error)
+                }
+                print("changed title ent", ent)
+                return CheatItem(fromEnt: ent as! CheatItemEnt)
+            }
+            return CheatItem(content: self.content, title: title)
         case "content":
-            self.content = value as! String
+            let content = value as! String
+            if let ent = self.originalEnt {
+                do {
+                    let appDelegate = NSApplication.shared.delegate as! AppDelegate
+                    let context = appDelegate.persistentContainer.viewContext
+                    
+                    ent.setValue(content, forKey: "content")
+                    try context.save()
+                } catch let error as NSError {
+                    print(error)
+                }
+                return CheatItem(fromEnt: ent as! CheatItemEnt)
+            }
+            return CheatItem(content: content, title: self.title)
         default:
             print("ERROR", key, value)
+            return self
         }
+    }
+    
+    func getListViewAddTitle() -> String {
+        return "Add " + self.title
+    }
+    
+    func getListViewReadTitle() -> String {
+        return self.title
+    }
+    
+    func contentEqual(other: PayloadTrait) -> Bool {
+        let otherCheatItem = other as! CheatItem
+        return self.title == otherCheatItem.title && self.content == otherCheatItem.content
     }
     
     func get(key: String) -> Any? {
@@ -52,6 +97,7 @@ struct CheatItem: PayloadTrait, Hashable {
     
     var content: String
     var title: String
+    var originalEnt: NSManagedObject?
     
     var id: String {
         title + content
@@ -70,5 +116,6 @@ struct CheatItem: PayloadTrait, Hashable {
     init(fromEnt ent: CheatItemEnt) {
         self.title = ent.title ?? ""
         self.content = ent.content
+        self.originalEnt = ent
     }
 }

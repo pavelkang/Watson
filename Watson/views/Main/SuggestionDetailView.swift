@@ -38,11 +38,11 @@ struct SuggestionDetailView: View {
     
     func makeContent() -> some View {
         switch suggestion.payload.app {
+        // TODO: should be app-ignorant
         case AppType.CheatsheetAppType:
-            let cheatItem: CheatItem = suggestion.payload as! CheatItem
             return AnyView(
                 DetailViewWrapper(quickActions: viewModel.getCurrentQuickActions(), selectedQAIndex: viewModel.selectedQAIndex) {
-                    CheatSheetControlledView(cheatItem: cheatItem, viewModel: viewModel)}
+                    CheatSheetControlledView(payload: suggestion.payload as! CheatItem, viewModel: viewModel)}
             )
         default:
             fatalError("Error rendering: " + suggestion.displayText)

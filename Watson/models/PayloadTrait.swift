@@ -6,11 +6,19 @@
 //
 
 import Foundation
+import CoreData
 
 protocol PayloadTrait {
     var app: AppType { get }
+    
+    var originalEnt: NSManagedObject? {get}
+    
+    func getListViewReadTitle() -> String
+    func getListViewAddTitle() -> String
 
-    mutating func set(key: String, with value: Any?)
+    func set(key: String, with value: Any?) -> PayloadTrait
     
     func get(key: String) -> Any?
+    
+    func contentEqual(other: PayloadTrait) -> Bool
 }

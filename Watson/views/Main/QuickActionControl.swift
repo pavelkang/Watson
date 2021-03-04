@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-typealias TypeQAActionFn = (PayloadTrait?) -> Void
+typealias TQAActionFn = (PayloadTrait?) -> Void
 
 /// QuickAction
 class QuickAction: Identifiable, Hashable {
@@ -24,18 +24,18 @@ class QuickAction: Identifiable, Hashable {
     }
     var text: String
     var symbol: String
-    var action: TypeQAActionFn
+    var action: TQAActionFn
     var identifier: String
     var payload: PayloadTrait?
     
-    init(identifier: String, text: String, symbol: String, action: @escaping TypeQAActionFn) {
+    init(identifier: String, text: String, symbol: String, action: @escaping TQAActionFn) {
         self.text = text
         self.symbol = symbol
         self.action = action
         self.identifier = identifier
     }
     
-    init(originalQA: QuickAction, newAction: @escaping TypeQAActionFn) {
+    init(originalQA: QuickAction, newAction: @escaping TQAActionFn) {
         self.text = originalQA.text
         self.symbol = originalQA.symbol
         self.action = newAction
@@ -45,13 +45,19 @@ class QuickAction: Identifiable, Hashable {
     // MARK: Factory methods
     static func OpenInBrowserAction(identifier: String, url: String) -> QuickAction {
         QuickAction(identifier: identifier, text: "Open In Browser", symbol: "square.and.arrow.up", action: { _ in
-            print("open in browser action")
-            if let checkURL = NSURL(string: url) {
+            
+            // format url
+            var formatted_url = url
+            if !(url.hasPrefix("http")) {
+                formatted_url = "https://" + url
+            }
+            if let checkURL = NSURL(string: formatted_url) {
+                print(url, checkURL)
                 if NSWorkspace.shared.open(checkURL as URL) {
                     print("URL Successfully Opened")
                 }
             } else {
-                print("Invalid URL", url)
+                print("Invalid URL", formatted_url)
             }
         })
     }
@@ -64,7 +70,7 @@ class QuickAction: Identifiable, Hashable {
         })
     }
     
-    static func CreateItemAction(identifier: String, item: CheatItem, action: @escaping TypeQAActionFn) -> QuickAction {
+    static func CreateItemAction(identifier: String, item: CheatItem, action: @escaping TQAActionFn) -> QuickAction {
         QuickAction(identifier: identifier, text: "Create Item", symbol: "pencil.tip.crop.circle.badge.plus", action: action)
     }
     

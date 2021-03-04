@@ -21,8 +21,10 @@ class WatsonViewModel: ObservableObject {
     @Published private(set) var suggestionResult: SuggestionResult
     @Published private(set) var selectedSuggestion: Suggestion? = nil
     @Published private(set) var selectedQAIndex: Int = 0
-    private var backend: WatsonBackend = WatsonBackend()
     @Published var payloadBeingEdited: PayloadTrait? = nil
+    
+    private var backend: WatsonBackend = WatsonBackend()
+    
     
     init() {
         suggestionResult = SuggestionResult(content: [])
@@ -82,8 +84,16 @@ class WatsonViewModel: ObservableObject {
     }
     
     func setPayload(at key: String, with value: Any?) -> Void {
+        //TODO can we avoid update everything??
         print("set payload", key, value, "__")
-        payloadBeingEdited?.set(key: key, with: value)
+        if let newPayload = payloadBeingEdited?.set(key: key, with: value) {
+            payloadBeingEdited = newPayload
+            if let newSuggestion = selectedSuggestion?.updatePayload(with: newPayload) {
+                selectedSuggestion = newSuggestion
+                suggestionResult = suggestionResult.updateSuggestion(with: newSuggestion)
+            }
+        }
+        print("new", payloadBeingEdited, selectedSuggestion, suggestionResult)
     }
     
     
@@ -117,6 +127,7 @@ class WatsonViewModel: ObservableObject {
     
     func _selectSuggestion(suggestion: Suggestion) {
         self.selectedSuggestion = suggestion
+        self.payloadBeingEdited = suggestion.payload
         selectedQAIndex = 0
     }
     

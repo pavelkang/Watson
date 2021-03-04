@@ -8,12 +8,15 @@
 
 import SwiftUI
 
+typealias TOnStringChangeFn = (String) -> Void
+
 class NSEditableTextView: NSTextView {
     private var placeholderInsets = NSEdgeInsets(top: 0.0, left: 4.0, bottom: 0.0, right: 4.0)
 
+    /*
     override func mouseDown(with event: NSEvent) {
         print(event)
-    }
+    }*/
     
     @objc var placeholderAttributedString: NSAttributedString?
     
@@ -23,26 +26,30 @@ class NSEditableTextView: NSTextView {
 
 class ScrollableEditableCoordinator: NSObject, NSTextViewDelegate {
     var swiftuiView: _ScrollableEditableTextView
+    var onChange: TOnStringChangeFn?
     
     init(_ textView: _ScrollableEditableTextView) {
         self.swiftuiView = textView
+        self.onChange = textView.onChange
     }
     
     func textDidChange(_ notification: Notification) {
-        print("HI")
         if let textField = notification.object as? NSEditableTextView {
             self.swiftuiView.text = textField.string
+            if let onChange = self.onChange {
+                onChange(textField.string)
+            }
         }
-        
     }
     
 }
 
 struct _ScrollableEditableTextView: NSViewRepresentable {
+
+    var text: String
+    var onChange: TOnStringChangeFn?
     
     var textStyle: NSFont.TextStyle
-    @Binding var text: String
-    
     var width: CGFloat
     var height: CGFloat
     var isVerticallyResizable: Bool
@@ -62,7 +69,7 @@ struct _ScrollableEditableTextView: NSViewRepresentable {
         
         textView.font = NSFont.preferredFont(forTextStyle: textStyle)
         textView.isAutomaticTextCompletionEnabled = false
-        
+        textView.string = text
         
         textView.drawsBackground = false
         textView.isSelectable = true
@@ -101,7 +108,9 @@ struct _ScrollableEditableTextView: NSViewRepresentable {
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         print("UPDATE NS VIEW", text)
         if let textView = nsView.documentView as? NSEditableTextView {
-            textView.string = text
+            if (text != textView.string) {
+                textView.string = text
+            }
             // textView.font = NSFont.preferredFont(forTextStyle: textStyle)
         }
     }
@@ -117,28 +126,18 @@ struct _ScrollableEditableTextView: NSViewRepresentable {
 struct EditableTextView: View {
     
     var placeholder: String = ""
-    @Binding var text: String
+    var text: String
+    var onChange: TOnStringChangeFn?
     @State private var hovering: Bool = false
     var width: CGFloat = 350
     var height: CGFloat = 30
     var textStyle: NSFont.TextStyle = .largeTitle
     var isVerticallyResizable: Bool = false
     var isHorizontallyResizable: Bool = true
-    var maximumNumberOfLines: Int = 1    
-    
-    /*
-    init(text: Binding<String>) {
-        print("init with", text.wrappedValue)
-        self._text = text
-    }
-    
-    init(text: Binding<String>, width: CGFloat, height: CGFloat, textStyle: NSFont.TextStyle, isVerticallyResizable: Bool, isHorizontallyResizable: Bool, maximumNumberOfLines: Int) {
-        print("Init with", text.wrappedValue)
-        self._text = text
-    }*/
+    var maximumNumberOfLines: Int = 1
     
     var body: some View {
-        _ScrollableEditableTextView(textStyle: textStyle, text: $text, width: width, height: height, isVerticallyResizable: isVerticallyResizable, isHorizontallyResizable: isHorizontallyResizable, maximumNumberOfLines: maximumNumberOfLines, placeholder: placeholder).frame(width: width, height: height)
+        _ScrollableEditableTextView(text: text, onChange: onChange, textStyle: textStyle, width: width, height: height, isVerticallyResizable: isVerticallyResizable, isHorizontallyResizable: isHorizontallyResizable, maximumNumberOfLines: maximumNumberOfLines, placeholder: placeholder).frame(width: width, height: height)
             .onHover(perform: { hovering in
                 self.hovering = hovering
             })
@@ -151,10 +150,10 @@ struct EditableTextView: View {
 
 struct EditableTextArea: View {
     var content: String
-    var initialText: String = ""
+    var onChange: TOnStringChangeFn?
 
     var body: some View {
-        EditableTextView(text: .constant(content), width: 400, height: 200, textStyle: .body, isVerticallyResizable: true, isHorizontallyResizable: true, maximumNumberOfLines: Int(INT_MAX))
+        EditableTextView(text: content, onChange: onChange, width: 400, height: 200, textStyle: .body, isVerticallyResizable: true, isHorizontallyResizable: true, maximumNumberOfLines: Int(INT_MAX))
     }
     
 }
@@ -162,7 +161,7 @@ struct EditableTextArea: View {
 struct EditableTextView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            EditableTextView(text: .constant("Add Title Here"))
+            EditableTextView(text: "Add Title Here")
                 .frame(width: 500, height: 500)
         }.background(Color.gray)
     }
