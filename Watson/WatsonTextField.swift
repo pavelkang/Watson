@@ -19,6 +19,7 @@ struct WatsonTextField: NSViewRepresentable {
     var onEsc: (() -> Void)? = nil
     var onControlTextChange: (() -> Void)? = nil
     var onMouseDown: (() -> Void)? = nil
+    var focusing: Bool = false
     
     func makeNSView(context: Context) -> TestTextField {
         let textView = TestTextField()
@@ -36,14 +37,19 @@ struct WatsonTextField: NSViewRepresentable {
             NSApplication.shared.windows.first!.makeFirstResponder(textView)
             // textView.window?.makeFirstResponder(textView)
         }
+        
         return textView
 
     }
     
-    func updateNSView(_ uiView: TestTextField, context: Context) {
+    func updateNSView(_ uiView: TestTextField, context: NSViewRepresentableContext<WatsonTextField>) {
         // uiView.becomeFirstResponder()
         uiView.stringValue = text
         uiView.font = NSFont.preferredFont(forTextStyle: textStyle)
+        if uiView.window?.firstResponder == uiView.window {
+            // on reload
+            uiView.becomeFirstResponder()
+        }
     }
     
     func makeCoordinator() -> Coordinator {
@@ -54,7 +60,6 @@ struct WatsonTextField: NSViewRepresentable {
         var swiftuiView: WatsonTextField
      
         init(_ textField: WatsonTextField) {
-            print("A")
             self.swiftuiView = textField
         }
         
@@ -67,6 +72,13 @@ struct WatsonTextField: NSViewRepresentable {
             }
         }
     
+        func controlTextDidEndEditing(_ obj: Notification) {
+            if let textField = obj.object as? TestTextField {
+                print("resign")
+                textField.resignFirstResponder()
+            }
+        }
+        
         
         func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
             switch commandSelector {

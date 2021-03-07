@@ -22,6 +22,7 @@ class WatsonViewModel: ObservableObject {
     @Published private(set) var selectedSuggestion: Suggestion? = nil
     @Published private(set) var selectedQAIndex: Int = 0
     @Published var payloadBeingEdited: PayloadTrait? = nil
+    @Published private(set) var focusOnQuery: Bool = true
     
     private var backend: WatsonBackend = WatsonBackend()
     
@@ -102,8 +103,8 @@ class WatsonViewModel: ObservableObject {
     /// - Returns: (i, j) if suggerstion is in section i, number j. nil if cannot be found
     func _findContentIndex(of suggestion: Suggestion) -> (Int, Int)? {
         for (sectionIndex, section) in self.suggestionResult.content.enumerated() {
-            if let suggestionIndex = section.suggestions.firstIndex(of: suggestion) {
-                return (sectionIndex, suggestionIndex)
+            if let idx = section.suggestions.firstIndex(where: {$0.id == suggestion.id}) {
+                return (sectionIndex, idx)
             } else {
                 return nil
             }
@@ -173,6 +174,7 @@ class WatsonViewModel: ObservableObject {
     
     func enter() -> Void {
         print("Pressed enter")
+
         let currentQAs = getCurrentQuickActions()
         print(currentQAs[self.selectedQAIndex].identifier)
         currentQAs[self.selectedQAIndex].getAction()()
@@ -186,13 +188,24 @@ class WatsonViewModel: ObservableObject {
     }
     
     func esc() -> Void {
-        resetState()
+        if isEmptyState {
+            // hide window
+            hideWindow()
+        } else {
+            resetState()
+        }
     }
     
     func getCurrentQuickActions() -> [QuickAction] {
         if let suggestion = selectedSuggestion {
-            _ = suggestion.quickActions.map({
-                qa in qa.contextualize(payload: self.payloadBeingEdited)
+            _ = suggestion.quickActions.map({ qa in
+                qa.contextualize(
+                    payload: payloadBeingEdited,
+                    onFinishFn: {
+                        self.resetState()
+                        self.hideWindow()
+                    }
+                )
             })
             return suggestion.quickActions
         }
@@ -201,6 +214,7 @@ class WatsonViewModel: ObservableObject {
     
     // MARK: UI Controls
     func onMouseDownQueryField() -> Void {
+        /*
         let alert = NSAlert()
         alert.messageText = "Give Up Editing?"
         alert.informativeText = "Your current item is not saved"
@@ -208,7 +222,21 @@ class WatsonViewModel: ObservableObject {
         alert.addButton(withTitle: "No")
         alert.beginSheetModal(for: NSApplication.shared.keyWindow!, completionHandler: {
             (response) in print(response)
-        })
+        })*/
+    }
+    
+    func onAppear() -> Void {
+        // NO-OP
+        focusOnQuery = true
+    }
+ 
+    func hideWindow() -> Void {
+        guard let appDelegate =
+          NSApplication.shared.delegate as? AppDelegate else {
+          return
+        }
+        // appDelegate.window.makeFirstResponder(nil)
+        appDelegate.window.orderOut(nil)
     }
     
 }

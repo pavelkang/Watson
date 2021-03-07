@@ -27,6 +27,7 @@ class QuickAction: Identifiable, Hashable {
     var action: TQAActionFn
     var identifier: String
     var payload: PayloadTrait?
+    var onFinishFn: (() -> Void)?
     
     init(identifier: String, text: String, symbol: String, action: @escaping TQAActionFn) {
         self.text = text
@@ -71,19 +72,35 @@ class QuickAction: Identifiable, Hashable {
     }
     
     static func CreateItemAction(identifier: String, item: CheatItem, action: @escaping TQAActionFn) -> QuickAction {
-        QuickAction(identifier: identifier, text: "Create Item", symbol: "pencil.tip.crop.circle.badge.plus", action: action)
+        QuickAction(identifier: identifier, text: "Create", symbol: "pencil.tip.crop.circle.badge.plus", action: action)
+    }
+    
+    static func DeleteItemAction(identifier: String, item: CheatItem, action: @escaping TQAActionFn) -> QuickAction {
+        QuickAction(identifier: identifier, text: "Delete", symbol: "trash", action: action)
     }
     
     // MARK:Contextualize
     
     /// Contextualize a quick action with the current payload
-    func contextualize(payload: PayloadTrait?) -> Void {
+    func contextualize(
+        payload: PayloadTrait?,
+        onFinishFn: @escaping () -> Void
+    ) -> Void {
         self.payload = payload
+        self.onFinishFn = onFinishFn
     }
     
     func getAction() -> () -> Void {
-        return {
-            self.action(self.payload)
+        
+        if let onFinish = self.onFinishFn {
+            return {
+                self.action(self.payload)
+                onFinish()
+            }
+        } else {
+            return {
+                self.action(self.payload)
+            }
         }
     }
 }

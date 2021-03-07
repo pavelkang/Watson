@@ -22,10 +22,10 @@ struct CheatSheetControlledView: View {
             EditableTextView(
                 placeholder: "Add Title Here",
                 text: viewModel.getPayload(at: "title") as! String,
-                
                 onChange: { newValue in
                     viewModel.setPayload(at: "title", with: newValue)
-                }
+                },
+                onEnter: viewModel.enter
             )
             EditableTextArea(
                 content: viewModel.getPayload(at: "content") as! String,

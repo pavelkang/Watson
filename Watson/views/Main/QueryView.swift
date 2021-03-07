@@ -35,9 +35,10 @@ struct QueryView: View {
                 },
                 onMouseDown: {
                     viewModel.onMouseDownQueryField()
-                }
+                },
+                focusing: viewModel.focusOnQuery
             )
-        }.padding(10).font(.title)
+        }.padding(10).font(.title2)
     }
 }
 

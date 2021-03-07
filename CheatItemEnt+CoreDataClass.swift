@@ -68,11 +68,11 @@ struct CheatItem: PayloadTrait, Hashable {
     }
     
     func getListViewAddTitle() -> String {
-        return "Add " + self.title
+        return "Add " + self.content
     }
     
     func getListViewReadTitle() -> String {
-        return self.title
+        return self.title.count > 0 ? self.title : self.content
     }
     
     func contentEqual(other: PayloadTrait) -> Bool {

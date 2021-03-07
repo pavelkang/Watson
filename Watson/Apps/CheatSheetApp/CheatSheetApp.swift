@@ -54,27 +54,18 @@ class CheatsheetApp: WatsonApp {
     }
     
     override func search(query: String) -> [Suggestion] {
-        print("SEARCH", query)
+        // TODO: Eventually this part should be AI-driven, designed with a more general
+        // approach.
+        // Currently, the algorithm can be described as:
+        // If user's query appears in existing entries, list read intents before create
+        // else: put create before read
+
         guard let appDelegate =
           NSApplication.shared.delegate as? AppDelegate else {
           return []
         }
         let moc = appDelegate.persistentContainer.viewContext
-        
-        // Create Fetch Request
-        /*
-        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "CheatItemEnt")
 
-        // Create Batch Delete Request
-        let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-
-        do {
-            try moc.execute(batchDeleteRequest)
-
-        } catch {
-            // Error Handling
-        }*/
-        
         
         let cheatItemEntFetch = NSFetchRequest<NSFetchRequestResult>(entityName: "CheatItemEnt")
         var fetchedCheatItemEnts: [CheatItemEnt] = []
@@ -85,12 +76,15 @@ class CheatsheetApp: WatsonApp {
         }
         print("Fetched items", fetchedCheatItemEnts)
         
-        let createIntents: Suggestion =  captureIntentToCreate(query: query)
-//        let results: Set<CheatItem> = databaseForTest.filter {
-//            let corpus: String = ($0.title ?? "") + $0.content
-//            return corpus.lowercased().contains(query.lowercased())
-//        }
-        var readIntents: [Suggestion] = fetchedCheatItemEnts.map { cheatItemEnt -> Suggestion in
+        let filteredCheatItemEnts = fetchedCheatItemEnts.filter {
+            let corpus: String = ($0.title ?? "") + $0.content
+            return corpus.lowercased().contains(query.lowercased())
+        }
+        
+        let createIntents: Suggestion = captureIntentToCreate(query: query)
+
+        
+        var readIntents: [Suggestion] = filteredCheatItemEnts.map { cheatItemEnt -> Suggestion in
             
             let cheatItem = CheatItem(fromEnt: cheatItemEnt)
             
@@ -99,13 +93,38 @@ class CheatsheetApp: WatsonApp {
                 qas.append(QuickAction.OpenInBrowserAction(identifier: cheatItem.id, url: cheatItem.content))
             }
             qas.append(QuickAction.CopyToClipBoardAction(identifier: cheatItem.id, content: cheatItem.content))
+            qas.append(QuickAction.DeleteItemAction(identifier: cheatItem.id, item: cheatItem, action: {
+                payload in
+                guard let appDelegate =
+                  NSApplication.shared.delegate as? AppDelegate else {
+                  return
+                }
+                let managedContext =
+                  appDelegate.persistentContainer.viewContext
+
+                let cheatItemEnt = payload?.originalEnt
+                managedContext.delete(cheatItemEnt!)
+                do {
+                  try managedContext.save()
+                } catch let error as NSError {
+                  print("Could not save. \(error), \(error.userInfo)")
+                }
+            }))
             return Suggestion.FromExisting(
                 payload: cheatItem,
                 qas: qas
             )
         }
-        readIntents.append(createIntents)
-        return readIntents
+        var result: [Suggestion] = []
+        if readIntents.count > 0 {
+            result.append(contentsOf: readIntents)
+            result.append(createIntents)
+        } else {
+            result.append(contentsOf: readIntents)
+            result.append(createIntents)
+        }
+        return result
+        
     }
     
     override var symbol: String {

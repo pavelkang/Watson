@@ -14,6 +14,7 @@ enum AppType: String {
 
 
 struct Suggestion: Identifiable, Hashable {
+    
     static func == (lhs: Suggestion, rhs: Suggestion) -> Bool {
         return lhs.payload.contentEqual(other: rhs.payload)
     }

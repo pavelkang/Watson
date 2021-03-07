@@ -42,12 +42,30 @@ class ScrollableEditableCoordinator: NSObject, NSTextViewDelegate {
         }
     }
     
+    func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        switch commandSelector {
+        case #selector(NSResponder.insertNewline(_:)):
+            if let enterFn = swiftuiView.onEnter {
+                /*
+                DispatchQueue.main.async { //omg
+                      textView.window?.makeFirstResponder(nil)
+                  }*/
+                enterFn()
+            }
+            return true
+        default:
+            return false
+        }
+    }
+    
+    
 }
 
 struct _ScrollableEditableTextView: NSViewRepresentable {
 
     var text: String
     var onChange: TOnStringChangeFn?
+    var onEnter: (() -> Void)?
     
     var textStyle: NSFont.TextStyle
     var width: CGFloat
@@ -56,10 +74,10 @@ struct _ScrollableEditableTextView: NSViewRepresentable {
     var isHorizontallyResizable: Bool
     var maximumNumberOfLines: Int
     var placeholder: String
+
     
     func makeNSView(context: Context) -> NSScrollView {
         
-        print("make ns view with", text)
         
         let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: width, height: height))
         scrollView.drawsBackground = false
@@ -95,12 +113,10 @@ struct _ScrollableEditableTextView: NSViewRepresentable {
         textView.textContainer?.maximumNumberOfLines = maximumNumberOfLines
         // textView.enclosingScrollView?.hasHorizontalScroller = true
         scrollView.documentView = textView
-        
         NotificationCenter.default.addObserver(forName: NSNotification.Name("mousedown_outside"), object: nil, queue: nil, using: {_ in
             textView.window?.makeFirstResponder(nil)
             textView.scroll(NSPoint(x: 0, y: 0))
         })
-        
         
         return scrollView
     }
@@ -128,8 +144,9 @@ struct EditableTextView: View {
     var placeholder: String = ""
     var text: String
     var onChange: TOnStringChangeFn?
+    var onEnter: (() -> Void)?
     @State private var hovering: Bool = false
-    var width: CGFloat = 350
+    var width: CGFloat = 400
     var height: CGFloat = 30
     var textStyle: NSFont.TextStyle = .largeTitle
     var isVerticallyResizable: Bool = false
@@ -137,7 +154,7 @@ struct EditableTextView: View {
     var maximumNumberOfLines: Int = 1
     
     var body: some View {
-        _ScrollableEditableTextView(text: text, onChange: onChange, textStyle: textStyle, width: width, height: height, isVerticallyResizable: isVerticallyResizable, isHorizontallyResizable: isHorizontallyResizable, maximumNumberOfLines: maximumNumberOfLines, placeholder: placeholder).frame(width: width, height: height)
+        _ScrollableEditableTextView(text: text, onChange: onChange, onEnter: onEnter, textStyle: textStyle, width: width, height: height, isVerticallyResizable: isVerticallyResizable, isHorizontallyResizable: isHorizontallyResizable, maximumNumberOfLines: maximumNumberOfLines, placeholder: placeholder).frame(width: width, height: height)
             .onHover(perform: { hovering in
                 self.hovering = hovering
             })

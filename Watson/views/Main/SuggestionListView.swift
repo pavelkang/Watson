@@ -22,6 +22,10 @@ extension View {
     }
 }
 
+func filterString(rawString: String) -> String {
+    String(rawString.filter { !"\n\t\r".contains($0) })
+}
+
 struct SuggestionItemView: View {
 
     var text: String
@@ -38,7 +42,6 @@ struct SuggestionItemView: View {
     var body: some View {
         let fgColor = (selected || hovered) ? activeFGColor : inactiveFGColor
         let bgColor = selected ? activeBGColor : (hovered ? hoveredBGColor : Color.white)
-        
         Text(text)
             .frame(maxWidth: .infinity, maxHeight: 0, alignment: .leading)
             .padding(bgPad)
@@ -57,8 +60,12 @@ struct SuggestionItemControlledView: View {
     @State var hovering: Bool = false
     
     var body: some View {
-        let selected: Bool = viewModel.selectedSuggestion == suggestion
-        SuggestionItemView(text: suggestion.displayText, selected: selected, hovered: self.hovering)
+        let selected: Bool = viewModel.selectedSuggestion?.id == suggestion.id
+        SuggestionItemView(
+            text: filterString(rawString: suggestion.displayText),
+            selected: selected,
+            hovered: self.hovering
+        )
             .onHover(perform: { hovering in
                 self.hovering = hovering
             })
