@@ -9,7 +9,6 @@ import Foundation
 import Cocoa
 
 class CheatsheetApp: WatsonApp {
-    var databaseForTest: Set<CheatItem> = Set<CheatItem>()
     
     init() {
         super.init(name: "Cheatsheet")

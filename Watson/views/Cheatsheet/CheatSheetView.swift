@@ -38,7 +38,7 @@ struct CheatSheetControlledView: View {
     }
 }
 
-
+/*
 struct CheatSheetControlledView_Previews: PreviewProvider {
     static var previews: some View {
         CheatSheetControlledView(
@@ -46,4 +46,4 @@ struct CheatSheetControlledView_Previews: PreviewProvider {
             viewModel: WatsonViewModel()
         )
     }
-}
+}*/

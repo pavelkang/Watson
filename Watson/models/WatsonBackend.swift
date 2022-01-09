@@ -38,23 +38,6 @@ class WatsonApp: Hashable {
     
 }
 
-class TodoApp: WatsonApp {
-    var todoItem: TodoItem?
-    
-    init() {
-        todoItem = nil
-        super.init(name: "Todo")
-    }
-    
-    override func search(query: String) -> [Suggestion] {
-        return []
-    }
-    
-    override var symbol: String {
-        "pencil.tip.crop.circle"
-    }
-}
-
 class WatsonBackend {
     
     var database: Set<Suggestion> = []
@@ -62,7 +45,7 @@ class WatsonBackend {
     
     init() {
         apps.insert(CheatsheetApp())
-        
+        apps.insert(TodoApp())
     }
     
     func search(query: String) -> SuggestionResult {
