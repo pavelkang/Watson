@@ -79,6 +79,10 @@ class QuickAction: Identifiable, Hashable {
         QuickAction(identifier: identifier, text: "Delete", symbol: "trash", action: action)
     }
     
+    static func SaveItemAction(identifier: String, item: TodayItem, action: @escaping TQAActionFn) -> QuickAction {
+        QuickAction(identifier: identifier, text: "Save", symbol: "square.and.arrow.down", action: action)
+    }
+    
     // MARK:Contextualize
     
     /// Contextualize a quick action with the current payload

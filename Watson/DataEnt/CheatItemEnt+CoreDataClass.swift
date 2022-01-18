@@ -76,6 +76,9 @@ struct CheatItem: PayloadTrait, Hashable {
     }
     
     func contentEqual(other: PayloadTrait) -> Bool {
+        if self.app != other.app {
+            return false
+        }
         let otherCheatItem = other as! CheatItem
         return self.title == otherCheatItem.title && self.content == otherCheatItem.content
     }

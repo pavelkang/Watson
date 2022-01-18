@@ -44,12 +44,15 @@ class WatsonBackend {
     var apps: Set<WatsonApp> = []
     
     init() {
+        // Register apps
         apps.insert(CheatsheetApp())
         apps.insert(TodoApp())
     }
     
     func search(query: String) -> SuggestionResult {
         var content: [SuggestionSection] = []
+
+        // Ranking
         for (index, app) in apps.enumerated() {
             let suggestionsForThisApp: [Suggestion] = app.search(query: query)
             if suggestionsForThisApp.count > 0 {

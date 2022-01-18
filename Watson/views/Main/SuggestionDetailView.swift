@@ -39,10 +39,15 @@ struct SuggestionDetailView: View {
     func makeContent() -> some View {
         switch suggestion.payload.app {
         // TODO: should be app-ignorant
-        case AppType.CheatsheetAppType:
+        case .CheatsheetAppType:
             return AnyView(
                 DetailViewWrapper(quickActions: viewModel.getCurrentQuickActions(), selectedQAIndex: viewModel.selectedQAIndex) {
                     CheatSheetControlledView(payload: suggestion.payload as! CheatItem, viewModel: viewModel)}
+            )
+        case .TodoAppType:
+            return AnyView(
+                DetailViewWrapper(quickActions: viewModel.getCurrentQuickActions(), selectedQAIndex: viewModel.selectedQAIndex) {
+                    TodayView(payload: suggestion.payload as! TodayItem, viewModel: viewModel)}
             )
         default:
             fatalError("Error rendering: " + suggestion.displayText)

@@ -38,12 +38,16 @@ struct CheatSheetControlledView: View {
     }
 }
 
-/*
+
 struct CheatSheetControlledView_Previews: PreviewProvider {
+    
+    static var payload: PayloadTrait = CheatItem(content: "https://www.thefarmersdog.com", title: "dog food")
+    static var suggestion: Suggestion = Suggestion.FromNew(payload: payload, qas: [])
+    
     static var previews: some View {
         CheatSheetControlledView(
-            payload: CheatItem(content: "https://www.thefarmersdog.com", title: "dog food"),
-            viewModel: WatsonViewModel()
+            payload: payload as! CheatItem,
+            viewModel: WatsonViewModel(withSuggestion: suggestion)
         )
     }
-}*/
+}

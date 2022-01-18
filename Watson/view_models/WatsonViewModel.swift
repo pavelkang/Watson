@@ -31,12 +31,20 @@ class WatsonViewModel: ObservableObject {
         suggestionResult = SuggestionResult(content: [])
     }
     
+    // for preview
     init(withQuery: String, withState: ViewState) {
         query = withQuery
         suggestionResult = SuggestionResult(content: [])
         self.updateQuery(to: query)
     }
     
+    init(withSuggestion: Suggestion) {
+        suggestionResult = SuggestionResult(content:[])
+        selectedSuggestion = withSuggestion
+        payloadBeingEdited = withSuggestion.payload
+        viewState = .finished
+    }
+        
     var isEmptyState: Bool {
         return viewState == ViewState.empty
     }
@@ -105,14 +113,13 @@ class WatsonViewModel: ObservableObject {
         for (sectionIndex, section) in self.suggestionResult.content.enumerated() {
             if let idx = section.suggestions.firstIndex(where: {$0.id == suggestion.id}) {
                 return (sectionIndex, idx)
-            } else {
-                return nil
             }
         }
         return nil
     }
     
     func _findSuggestion(on position: (Int, Int)) -> Suggestion? {
+        print("find suggestion", position)
         if (position.0 < 0 || position.1 < 0) {
             return nil
         }
@@ -237,6 +244,26 @@ class WatsonViewModel: ObservableObject {
         }
         // appDelegate.window.makeFirstResponder(nil)
         appDelegate.window.orderOut(nil)
+    }
+    
+    func getTodayItems() -> [TodayItem] {
+        guard let appDelegate =
+          NSApplication.shared.delegate as? AppDelegate else {
+          return []
+        }
+        let moc = appDelegate.persistentContainer.viewContext
+
+        
+        let todayItemEntFetch = NSFetchRequest<NSFetchRequestResult>(entityName: "TodayItemEnt")
+        var fetchedTodayItemEnts: [TodayItemEnt] = []
+        do {
+            fetchedTodayItemEnts = try moc.fetch(todayItemEntFetch) as! [TodayItemEnt]
+        } catch {
+            fatalError("Failed to fetch todays: \(error)")
+        }
+        return fetchedTodayItemEnts.map{ todayItemEnt in
+            TodayItem(fromEnt: todayItemEnt)
+        }
     }
     
 }
